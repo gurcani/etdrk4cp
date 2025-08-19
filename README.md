@@ -15,7 +15,8 @@ The solver consists of three files,
 The file [burg1d_ex.py](burg1d_ex.py) is an example that solves the burgers equation, where the nonlinear term is computed using a pseud-spectral method, with a large scale forcing, with a padded resolution of 262144, and a viscosity 1e-4. 
 Large viscosity is necessary because Burger's equation generates shocks, and the pseudo-spectral method is not good at dealing with those. However the large resolution together with the high value of viscosity makes the problem extremely stiff. 
 It would take forever to solve this with scipy.integrate.DOP853. And if we use a fixed time step, it must be smaller than dt=1e-4. However the adaptive time step algorithm, when initialized with a small enough time step, manages to 
-crunch through, with a reasonable looking solution with a tolerance of tol=1e-6. Running this example took on my RTX 2000 Ada Generation Laptop GPU.
+crunch through, with a reasonable looking solution with a tolerance of tol=1e-6. Running this example (up to t=100) took half an hour on my RTX 2000 Ada Generation Laptop GPU.
 
-Note that running this file will basically generate a hdf5 file called "out.h5", 
+Note that running this file will basically generate a hdf5 file called "out.h5", velocity as a function of time looks something like: 
+
 ![burg1d](https://github.com/gurcani/img/blob/main/burg1d.png)
