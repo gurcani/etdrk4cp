@@ -18,4 +18,4 @@ Note that running this file will basically generate a hdf5 file called "out.h5",
 
 ![burg1d](https://github.com/gurcani/img/blob/main/burg1d.png)
 
-We see the shocks as sharp caroonish edges on the time evolution plot on the left, whereas the familiar $k^{-2}$ power law for the Burgers equation can be observed on the right.
+We see the shocks as sharp caroonish edges on the time evolution plot on the left, whereas the familiar $k^{-2}$ power law for the Burgers equation can be observed on the right. One can also see a small plateau near the peak of the spectrum, which corresponds to the forcing region.
