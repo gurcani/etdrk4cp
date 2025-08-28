@@ -10,12 +10,13 @@ import cupy as xp
 
 class etdrk4cp:
     #Mostly from Nicola Farenga's implementation [https://github.com/farenga/ETDRK4] of Kassam and Lloyd 05
-    def __init__(self,Nl,L,v,h,M=64):
+    def __init__(self,Nl,L,v,h,M=64,maxstep=0.25):
         self.Nl=Nl
         self.L=L
         self.h=h
         self.M=M
         self.compute_coeffs()
+        self.maxstep=maxstep
 
     def compute_coeffs(self):
         L,h,M=self.L,self.h,self.M
@@ -51,7 +52,7 @@ class etdrk4cp:
         
     def recompute_stepsize(self,err,tol):
         # The idea is from Deka and Einkemmer 22, applied to powers of two so that we don't recompute the coefficients for small changes.
-        h=2**xp.floor(xp.log2(self.h*(tol/err)**(1/4))).item()
+        h=min(self.maxstep,2**xp.floor(xp.log2(self.h*(tol/err)**(1/4))).item())
         if(self.h!=h):
             self.h=h
             self.compute_coeffs()

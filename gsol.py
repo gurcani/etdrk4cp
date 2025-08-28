@@ -30,10 +30,9 @@ class gsol:
         self.t=float(t0)
         self.t1=float(t1)
         self.y=y0
-        self.h=dtstep
         self.tol=tol
         if (L.size==y0.size): # means L is diagonal
-            self.r_=etd(fexp,L,y0,self.h,**kwargs)
+            self.r_=etd(fexp,L,y0,dtstep,**kwargs)
         #else: # diagonalize and use the eigenmodes as Ldia
         self.cbs=callbacks
 
