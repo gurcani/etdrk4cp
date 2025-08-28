@@ -22,10 +22,10 @@ Note that running this file will basically generate a hdf5 file called "outburg.
 
 ![burg1d](https://github.com/gurcani/img/blob/main/burg1d.png)
 
-We see the shocks as sharp caroonish edges on the time evolution plot on the left, whereas the familiar $k^{-2}$ power law for the Burgers equation can be observed on the right. One can also see a small plateau near the peak of the spectrum, which corresponds to the forcing region.
+We see the shocks as sharp caroonish edges on the time evolution plot on the left, whereas the familiar k**(-2) power law for the Burgers equation can be observed on the right. One can also see a small plateau near the peak of the spectrum, which corresponds to the forcing region.
 
 ### 2D Navier-Stokes Equation
 
-The file [ns2d_forced.py](ns2d_forced.py) is another example that solves the two dimensional Navier-Stokes equation, this time with small scale random forcing (in a shell around k=100, with dtforce_update=0.1 and an amplitude A=10.0), in order to observe inverse cascase, again using the pseudo-spectral method, with regular viscosity to remove small scale enstrophy ($\nu=1e-4$) and hypo-viscosity of the form $\nu_L/k^4$ with $\nu_L=10.0$.
+The file [ns2d_forced.py](ns2d_forced.py) is another example that solves the two dimensional Navier-Stokes equation, this time with small scale random forcing (in a shell around k=100, with dtforce_update=0.1 and an amplitude A=10.0), in order to observe inverse cascase, again using the pseudo-spectral method, with regular viscosity to remove small scale enstrophy (nu=1e-4) and hypo-viscosity of the form nuL/k**4 with nuL=10.0.
 
 ![ns2d_spec](https://github.com/gurcani/img/blob/main/ns2d_spec.png)
