@@ -19,12 +19,6 @@ import os
 from cupyx.scipy.fft import rfft2,irfft2
 get = lambda x : x.get() if (xp.__name__ == 'cupy') else x
 
-flname="outns.h5"
-Npx,Npy=1024,1024
-t0,t1=0.0,500.0
-Nx,Ny=2*int(np.floor(Npx/3)),2*int(np.floor(Npy/3))
-Lx,Ly=2*np.pi,2*np.pi
-
 class slicelist:
     def __init__(self,Nx,Ny):
         shp=(Nx,Ny)
@@ -59,68 +53,76 @@ def init_kspace_grid(sl):
     ky=xp.hstack([ky[l].ravel() for l in sl.insl])
     return kx,ky
 
-def init_forcing(kx,ky,A=1e2,k0=50.0,dk=2.0):
+def init_forcing(kx,ky,A=1e2,k0=100.0,dk=2.0):
     k=xp.sqrt(kx**2+ky**2)
     return A*xp.exp(-(k-k0)**2/2/dk**2+1j*2*xp.pi*xp.random.rand(k.size))/k.size
 
 def update_forcing(fk):
     print("updating forcing...")
     fk[:]=fk*xp.exp(1j*2*xp.pi*xp.random.rand(fk.size))
+
+if __name__ == "__main__":
     
-def irft(uk):
-    u=mlsarray(Npx,Npy)
-    u[sl]=uk
-    u[-1:-int(Nx/2):-1,0]=u[1:int(Nx/2),0].conj()
-    u.view(dtype=float)[:,:-2]=irfft2(u,norm='forward',overwrite_x=True)
-    return u.view(dtype=float)[:,:-2]
-
-def rft(u):
-    uk=rfft2(u,norm='forward',overwrite_x=True).view(type=mlsarray)
-    return xp.hstack(uk[sl])
-
-def save_callback(fl,t,y):
-    phik=y.view(dtype=complex)
-    om=irft(-phik*(kx**2+ky**2))
-    save_data(fl,'fields',ext_flag=True,om=get(om),t=t)
-
-def rhs(t,y):
-    phik=y.view(dtype=complex)
-    dphikdt=xp.zeros_like(phik)
-    dxphi=irft(1j*kx*phik)
-    dyphi=irft(1j*ky*phik)
+    flname="outns.h5"
+    Npx,Npy=1024,1024
+    t0,t1=0.0,200.0
+    Nx,Ny=2*int(np.floor(Npx/3)),2*int(np.floor(Npy/3))
+    Lx,Ly=2*np.pi,2*np.pi
+    
+    def irft(uk):
+        u=mlsarray(Npx,Npy)
+        u[sl]=uk
+        u[-1:-int(Nx/2):-1,0]=u[1:int(Nx/2),0].conj()
+        u.view(dtype=float)[:,:-2]=irfft2(u,norm='forward',overwrite_x=True)
+        return u.view(dtype=float)[:,:-2]
+    
+    def rft(u):
+        uk=rfft2(u,norm='forward',overwrite_x=True).view(type=mlsarray)
+        return xp.hstack(uk[sl])
+    
+    def save_callback(fl,t,y):
+        phik=y.view(dtype=complex)
+        om=irft(-phik*(kx**2+ky**2))
+        save_data(fl,'fields',ext_flag=True,om=get(om),t=t)
+    
+    def rhs(t,y):
+        phik=y.view(dtype=complex)
+        dphikdt=xp.zeros_like(phik)
+        dxphi=irft(1j*kx*phik)
+        dyphi=irft(1j*ky*phik)
+        om=irft(-ksqr*phik)
+        dphikdt[:]=-1j*kx*rft(dyphi*om)/ksqr+1j*ky*rft(dxphi*om)/ksqr
+        dphikdt[:]+=+fk[:]
+        return dphikdt
+    
+    dkx,dky=2*np.pi/Lx,2*np.pi/Ly
+    sl=slicelist(Nx,Ny)
+    lkx,lky=init_kspace_grid(sl)
+    kx,ky=lkx*dkx,lky*dky
+    xl,yl=np.arange(-Lx/2,Lx/2,Lx/Npx),np.arange(-Ly/2,Ly/2,Ly/Npy)
+    x,y=np.meshgrid(xl,yl,indexing='ij')
+    ksqr=kx**2+ky**2
+    fk=init_forcing(kx,ky)
+    
+    phik=1e-8*fk.copy()
+    nu=1e-4
+    nuL=1e1
     om=irft(-ksqr*phik)
-    dphikdt[:]=-1j*kx*rft(dyphi*om)/ksqr+1j*ky*rft(dxphi*om)/ksqr
-    dphikdt[:]+=+fk[:]
-    return dphikdt
-
-dkx,dky=2*np.pi/Lx,2*np.pi/Ly
-sl=slicelist(Nx,Ny)
-lkx,lky=init_kspace_grid(sl)
-kx,ky=lkx*dkx,lky*dky
-xl,yl=np.arange(-Lx/2,Lx/2,Lx/Npx),np.arange(-Ly/2,Ly/2,Ly/Npy)
-x,y=np.meshgrid(xl,yl,indexing='ij')
-ksqr=kx**2+ky**2
-fk=init_forcing(kx,ky)
-
-phik=1e-8*fk.copy()
-nu=1e-4
-nuL=1e1
-om=irft(-ksqr*phik)
-if os.path.exists(flname):
-    os.remove(flname)
-fl=h5.File(flname,'w',libver='latest')
-fl.swmr_mode = True
-save_data(fl,'data',ext_flag=False,x=x,y=y)
-save_data(fl,'fields',ext_flag=True,om=get(om),t=t0)
-ct=time()
-fcbs = [(lambda t,y : print('t=',t,', ',time()-ct,' secs elapsed')),
-        (lambda t,y : update_forcing(fk)),
-        (lambda t,y : save_callback(fl,t,y))]
-dtstep=0.1
-dtcbs = [0.1,0.1,1.0]
-cbs = callbacks(dtcbs,fcbs)
-r=gsol(rhs,t0,phik,t1,-nu*ksqr-nuL/ksqr**3,dtstep,callbacks=cbs,tol=1e-9,maxstep=0.1)
-
-#r=gensolver('cupy_ivp.DOP853',rhs,t0,phik.view(dtype=float),t1,fsave=fsave,dtstep=dtstep,dtshow=dtshow,dtsave=dtsave,rtol=1e-8,atol=1e-12)
-r.run()
-fl.close()
+    if os.path.exists(flname):
+        os.remove(flname)
+    fl=h5.File(flname,'w',libver='latest')
+    fl.swmr_mode = True
+    save_data(fl,'data',ext_flag=False,x=x,y=y)
+    save_data(fl,'fields',ext_flag=True,om=get(om),t=t0)
+    ct=time()
+    fcbs = [(lambda t,y : print('t=',t,', ',time()-ct,' secs elapsed')),
+            (lambda t,y : update_forcing(fk)),
+            (lambda t,y : save_callback(fl,t,y))]
+    dtstep=0.1
+    dtcbs = [0.1,0.1,1.0]
+    cbs = callbacks(dtcbs,fcbs)
+    r=gsol(rhs,t0,phik,t1,-nu*ksqr-nuL/ksqr**3,dtstep,callbacks=cbs,tol=1e-8,maxstep=0.1)
+    
+    #r=gensolver('cupy_ivp.DOP853',rhs,t0,phik.view(dtype=float),t1,fsave=fsave,dtstep=dtstep,dtshow=dtshow,dtsave=dtsave,rtol=1e-8,atol=1e-12)
+    r.run()
+    fl.close()
