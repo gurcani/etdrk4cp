@@ -46,7 +46,8 @@ for l in range(len(tinds)):
 
 kn=get(kn)
 En=get(En)
-plt.figure(figsize=(9,8))
+plt.figure(figsize=(10,5))
+plt.subplot2grid((1,2),(0,0))
 plt.loglog(kn,np.mean(En,0),'x-',kn,En[0,],'lightgray',kn,En[-1,],'gray',kn,kn**(-5/3),'C1')
 plt.rcParams.update({'font.size': 14})
 plt.ylabel('$E(k)$')
@@ -54,5 +55,12 @@ plt.xlabel('$k$')
 plt.text(kn[50],kn[50]**(-5/3)*2,'$k^{-5/3}$',color='C1')
 plt.legend(['mean [150-200]','$t=150$','$t=200$'])
 plt.tight_layout()
+plt.subplot2grid((1,2),(0,1))
+x=fl['data/x'][()]
+y=fl['data/y'][()]
+plt.pcolormesh(x,y,om[-1,].T,cmap='seismic',vmax=80,vmin=-80)
+plt.xlabel('$x$')
+plt.gca().yaxis.tick_right()
+plt.gca().yaxis.set_ticklabels([])
 plt.savefig('out.png')
 fl.close()
